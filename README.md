@@ -18,10 +18,18 @@ poetry add yfinance pandas numpy ta matplotlib python-telegram-bot
 ```
 
 ### RUN BOT 
+1. update `resource/ticker.txt` list of stock.
+2. run command.
+
 ```
 poetry run python src/tse_trading_bot/bot.py
 ```
 in cannel
 ```
 /scan
+```
+
+### ONE TIME SCAN 
+```
+poetry run python src/tse_trading_bot/bot_manual.py
 ```
