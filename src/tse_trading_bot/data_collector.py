@@ -6,9 +6,11 @@ import pandas as pd
 import ta
 from pathlib import Path
 
-def _load_tickers(path: str = "./resouce/tickers.txt") -> List[str]:
+def _load_tickers(path: str = "../../resource/tickers.txt") -> List[str]:
     f = Path(path)
     if not f.exists():
+        print("nai")
+        exit(1)
         # sensible fallback
         return ["7203.T", "6758.T", "9984.T", "8306.T", "9432.T"]
 
