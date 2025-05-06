@@ -70,8 +70,10 @@ def fetch_and_analyze_tse_stocks(
         if close_col not in raw.columns:
             
             continue
-
-        print(raw)
+    
+        if DEBUG:
+            print(raw)
+    
         df = _indicators(raw, close_col)
         if df.empty:
             continue
@@ -81,7 +83,9 @@ def fetch_and_analyze_tse_stocks(
         latest = df.iloc[-1]
 
 
-        print(latest["RSI"])
+        if DEBUG:
+            print(latest["RSI"])
+    
         if  latest["RSI"] < 30 :
             # and latest[close_col] > latest["EMA20"]:
             results.append(
