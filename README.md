@@ -29,7 +29,11 @@ in cannel
 /scan
 ```
 
-### ONE TIME SCAN 
+### ONE-TIME SCAN 
 ```
 poetry run python src/tse_trading_bot/bot_manual.py
 ```
+
+
+### Demo
+[demo](!docs/message_demo.md)
