@@ -4,9 +4,22 @@ from typing import List, Dict
 import yfinance as yf
 import pandas as pd
 import ta
+from pathlib import Path
 
-# Default tickers (TSE suffix “.T”)
-DEFAULT_TICKERS = ["7203.T", "6758.T", "9984.T", "8306.T", "9432.T"]
+def _load_tickers(path: str = "./resouce/tickers.txt") -> List[str]:
+    f = Path(path)
+    if not f.exists():
+        # sensible fallback
+        return ["7203.T", "6758.T", "9984.T", "8306.T", "9432.T"]
+
+    return [
+        line.strip()
+        for line in f.read_text(encoding="utf‑8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+
+
+DEFAULT_TICKERS: List[str] = _load_tickers()
 
 
 def _indicators(df: pd.DataFrame, close_col: str) -> pd.DataFrame:
