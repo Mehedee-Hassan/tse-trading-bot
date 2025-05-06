@@ -36,4 +36,4 @@ poetry run python src/tse_trading_bot/bot_manual.py
 
 
 ### Demo
-[demo](!docs/message_demo.md)
+[demo](docs/message_demo.md)
