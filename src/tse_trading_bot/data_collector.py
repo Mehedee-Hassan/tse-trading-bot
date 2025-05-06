@@ -6,6 +6,9 @@ import pandas as pd
 import ta
 from pathlib import Path
 
+
+
+
 def _load_tickers(path: str = "../../resource/tickers.txt") -> List[str]:
     f = Path(path)
     if not f.exists():
@@ -42,6 +45,7 @@ def fetch_and_analyze_tse_stocks(
     tickers: List[str] | None = None,
     period: str = "3mo",
     interval: str = "1d",
+    DEBUG = False
 ) -> List[Dict]:
     """
     Returns a list of dicts with the latest signal for each qualifying ticker.
@@ -52,12 +56,19 @@ def fetch_and_analyze_tse_stocks(
     for ticker in tickers:
         raw = yf.download(ticker, period=period, interval=interval, group_by="ticker")
         if raw.empty:
+        
             continue
-
-        # Flatten MultiIndex → Close_<ticker>
+        if DEBUG:
+            print(raw.columns)
+        # Flatten MultiIndex → <ticker>_Close
         raw.columns = [f"{c[0]}_{c[1]}" for c in raw.columns]
-        close_col = f"Close_{ticker}"
+
+        if DEBUG:
+            print(raw.columns)
+        close_col = f"{ticker}_Close"
+        print(close_col)
         if close_col not in raw.columns:
+            
             continue
 
         print(raw)
@@ -69,7 +80,10 @@ def fetch_and_analyze_tse_stocks(
         resistance = df[close_col].tail(20).max()
         latest = df.iloc[-1]
 
-        if 30 < latest["RSI"] < 70 and latest[close_col] > latest["EMA20"]:
+
+        print(latest["RSI"])
+        if  latest["RSI"] < 30 :
+            # and latest[close_col] > latest["EMA20"]:
             results.append(
                 {
                     "Ticker": ticker,

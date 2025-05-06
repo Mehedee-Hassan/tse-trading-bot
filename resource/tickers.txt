@@ -1,4 +1,1 @@
-7203.T      # Toyota
-6758.T      # Sony
-9984.T      # SoftBank
-6594.T      # Nippon Electric Glass
+9158.T

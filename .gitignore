@@ -1,2 +1,4 @@
 .env
 ./.env
+resource/tickers copy.txt
+resource/tickers_back.txt
