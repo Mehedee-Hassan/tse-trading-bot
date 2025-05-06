@@ -1,0 +1,26 @@
+[project]
+name = "tse-trading-bot"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "mehedee-hassan",email = "razin.meha@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "yfinance (>=0.2.58,<0.3.0)",
+    "pandas (>=2.2.3,<3.0.0)",
+    "numpy (>=2.2.5,<3.0.0)",
+    "ta (>=0.11.0,<0.12.0)",
+    "matplotlib (>=3.10.1,<4.0.0)",
+    "python-telegram-bot (>=22.0,<23.0)",
+    "python-dotenv (>=1.1.0,<2.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "tse_trading_bot", from = "src"}]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
