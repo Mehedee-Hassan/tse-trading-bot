@@ -13,12 +13,14 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
-import data_collector                  # your existing module
+import data_collector                 
 
 # ───────── Config ──────────
-load_dotenv()                          # reads .env
+load_dotenv()                         
 TOKEN   = os.getenv("TELEGRAM_BOT_TOKEN")
-CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")        # group ID or user ID (str)
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")     
+THREASHOLD_DORP_PERCENTAGE = os.getenv("THREASHOLD_DORP_PERCENTAGE")
+THREASHOLD_RSI = os.getenv("THREASHOLD_RSI") 
 
 # ───────── Helpers ─────────
 def _format(results: list[dict]) -> str:
@@ -37,15 +39,15 @@ def _format(results: list[dict]) -> str:
     message_with_drop = ''
     if len(results_with_no_drop) > 0:
         message =  heading + "\n".join(
-            f"{r['Ticker']}  |  ¥{r['Price']}\n"
+            f"{r['Ticker']}  | {r['Name']} |  ¥{r['Price']}\n"
             f"RSI {r['RSI']} • MACD {r['MACD Signal']}\n"
             f"Support ¥{r['Support']} / Resistance ¥{r['Resistance']}\n"
             for r in results_with_no_drop
         )
     if len(results_with_drop) > 0:
 
-        message_with_drop =  f"\n**PRICE DROP ALERT !!! {datetime.now(ZoneInfo('Asia/Tokyo')).date()}"  + "\n".join(
-            f"\n{r['Ticker']}  | ¥{r['Price']}\n"
+        message_with_drop =  f"\n🚨PRICE DROP ALERT !!! {datetime.now(ZoneInfo('Asia/Tokyo')).date()}"  + "\n".join(
+            f"\n{r['Ticker']} | {r['Name']} | ¥{r['Price']}\n"
             f"\n{ abs(r['SuddenDrop']) } % Drop !!\n"
             f"RSI {r['RSI']} • MACD {r['MACD Signal']}\n"
             f"Support ¥{r['Support']} / Resistance ¥{r['Resistance']}\n"
@@ -80,5 +82,8 @@ def _send_telegram(text: str) -> None:
 
 # ───────── Main ──────────
 if __name__ == "__main__":
-    message = _format(data_collector.fetch_and_analyze_tse_stocks())
+    message = _format(data_collector.fetch_and_analyze_tse_stocks(
+            THREASHOLD_DORP_PERCENTAGE=int(THREASHOLD_DORP_PERCENTAGE),
+            THREASHOLD_RSI = int(THREASHOLD_RSI)
+        ))
     _send_telegram(message)

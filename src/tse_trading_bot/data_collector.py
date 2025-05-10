@@ -44,6 +44,8 @@ def _indicators(df: pd.DataFrame, close_col: str) -> pd.DataFrame:
 
 
 def fetch_and_analyze_tse_stocks(
+    THREASHOLD_DORP_PERCENTAGE:int = 5,
+    THREASHOLD_RSI:int = 30,
     tickers: List[str] | None = None,
     period: str = "3mo",
     interval: str = "1d",
@@ -57,16 +59,19 @@ def fetch_and_analyze_tse_stocks(
 
     for ticker in tickers:
         raw = yf.download(ticker, period=period, interval=interval, group_by="ticker")
+
         if raw.empty:
         
             continue
         if DEBUG:
             print(raw.columns)
+        
         # Flatten MultiIndex → <ticker>_Close
         raw.columns = [f"{c[0]}_{c[1]}" for c in raw.columns]
 
         if DEBUG:
             print(raw.columns)
+        
         close_col = f"{ticker}_Close"
         print(close_col)
         if close_col not in raw.columns:
@@ -95,8 +100,19 @@ def fetch_and_analyze_tse_stocks(
 
         if DEBUG:
             print(latest["RSI"])
-    
-        if  latest["RSI"] < 30 :
+
+        name = ""
+        try:
+            tic = yf.Ticker(ticker)
+            info = tic.get_info()              
+            name = info.get("longName") \
+                or info.get("shortName") \
+                or info.get("displayName")
+        except Exception as ex:
+            print(ex)
+
+
+        if  latest["RSI"] < THREASHOLD_RSI :
             # and latest[close_col] > latest["EMA20"]:
             results.append(
                 {
@@ -108,9 +124,10 @@ def fetch_and_analyze_tse_stocks(
                     else "Sell",
                     "Support": round(support, 2),
                     "Resistance": round(resistance, 2),
+                    "Name" : name
                 }
             )
-        if sudden_drop < -5:
+        if sudden_drop < (-THREASHOLD_DORP_PERCENTAGE):
             
             if "Ticker" not in results:
                 results.append(
@@ -124,12 +141,15 @@ def fetch_and_analyze_tse_stocks(
                         else "Sell",
                         "Support": round(support, 2),
                         "Resistance": round(resistance, 2),
+                        "Name" : name
                     })
             else:
                 results.append(
                     {
-                        "**Sudden Drop Alert !!": str(round(sudden_drop,2))+" % drop"
+                        "SuddenDrop": round(sudden_drop,2)
                     })                        
-            
-        print("result",results)
+        
+        if DEBUG:
+            print("result",results)
+
     return results
