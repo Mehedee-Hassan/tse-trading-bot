@@ -3,7 +3,7 @@ name = "tse-trading-bot"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "mehedee-hassan",email = "razin.meha@gmail.com"}
+    {name = "mehedee-hassan",email = ""}
 ]
 readme = "README.md"
 requires-python = ">=3.11"
