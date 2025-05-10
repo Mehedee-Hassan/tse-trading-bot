@@ -41,6 +41,8 @@ def _indicators(df: pd.DataFrame, close_col: str) -> pd.DataFrame:
     return df.dropna()
 
 
+
+
 def fetch_and_analyze_tse_stocks(
     tickers: List[str] | None = None,
     period: str = "3mo",
@@ -73,8 +75,12 @@ def fetch_and_analyze_tse_stocks(
     
         if DEBUG:
             print(raw)
-    
+
+
         df = _indicators(raw, close_col)
+            
+
+
         if df.empty:
             continue
 
@@ -82,6 +88,10 @@ def fetch_and_analyze_tse_stocks(
         resistance = df[close_col].tail(20).max()
         latest = df.iloc[-1]
 
+        sudden_drop = ((df.iloc[-1][close_col] - df.iloc[-2][close_col]) / df.iloc[-2][close_col]) * 100
+        print(df.iloc[-1][close_col])
+        print(df.iloc[-2][close_col])
+        print(sudden_drop)
 
         if DEBUG:
             print(latest["RSI"])
@@ -100,5 +110,26 @@ def fetch_and_analyze_tse_stocks(
                     "Resistance": round(resistance, 2),
                 }
             )
+        if sudden_drop < -5:
+            
+            if "Ticker" not in results:
+                results.append(
+                    {
+                        "Ticker": ticker,
+                        "SuddenDrop": round(sudden_drop,2),
+                        "Price": round(latest[close_col], 2),
+                        "RSI": round(latest["RSI"], 2),
+                        "MACD Signal": "Buy"
+                        if latest["MACD"] > latest["Signal"]
+                        else "Sell",
+                        "Support": round(support, 2),
+                        "Resistance": round(resistance, 2),
+                    })
+            else:
+                results.append(
+                    {
+                        "**Sudden Drop Alert !!": str(round(sudden_drop,2))+" % drop"
+                    })                        
+            
         print("result",results)
     return results
