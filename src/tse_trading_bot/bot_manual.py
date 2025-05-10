@@ -54,7 +54,7 @@ def _format(results: list[dict]) -> str:
             for r in results_with_drop
         )
 
-    additionals = f"\n Trading View: https://www.tradingview.com/chart/ \n" \
+    additionals = f"\nTrading View: https://www.tradingview.com/chart/ \n" \
                    "Rakuten Security: https://www.rakuten-sec.co.jp\n"
 
     return message + message_with_drop + additionals
