@@ -15,8 +15,8 @@ import csv
 
 TZ = ZoneInfo("Asia/Tokyo")
 TODAY: str = datetime.now(TZ).date().isoformat() 
-ALERTS_FILE: Path = Path("./data/"+str(TODAY)+".csv")
 
+ALERTS_FILE: Path = util._load_data_path(TODAY) 
 DEFAULT_TICKERS: List[str] = util._load_tickers()
 
 # Row schema: alert_date,ticker,alert_type
