@@ -54,9 +54,9 @@ def _format(results: list[dict],additionals_flag: bool=False) -> str:
     message_with_drop = ''
     message_with_buy = ''
     if len(results_with_no_drop) > 0:
-        message =  heading + "\n".join(
+        message =  f"\n⬇️ RSI Signal ({datetime.now(ZoneInfo('Asia/Tokyo')).date()})\n\n" + "\n".join(
             f"{r['Ticker']}  | {r['Name']} |  ¥{r['Price']}\n"
-            f"RSI {r['RSI']} • MACD {r['MACD Signal']}\n"
+            f"RSI {r['RSI']}"
             f"Support ¥{r['Support']} / Resistance ¥{r['Resistance']}\n"
             for r in results_with_no_drop
         )
