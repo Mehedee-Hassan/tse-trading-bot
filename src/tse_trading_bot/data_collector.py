@@ -5,26 +5,12 @@ import yfinance as yf
 import pandas as pd
 import ta
 from pathlib import Path
+import util
 
 
 
 
-def _load_tickers(path: str = "../../resource/tickers.txt") -> List[str]:
-    f = Path(path)
-    if not f.exists():
-        print("nai")
-        exit(1)
-        # sensible fallback
-        return ["7203.T", "6758.T", "9984.T", "8306.T", "9432.T"]
-
-    return [
-        line.strip()
-        for line in f.read_text(encoding="utf‑8").splitlines()
-        if line.strip() and not line.lstrip().startswith("#")
-    ]
-
-
-DEFAULT_TICKERS: List[str] = _load_tickers()
+DEFAULT_TICKERS: List[str] = util._load_tickers()
 
 
 def _indicators(df: pd.DataFrame, close_col: str) -> pd.DataFrame:
@@ -64,6 +50,7 @@ def fetch_and_analyze_tse_stocks(
         
             continue
         if DEBUG:
+            print(raw)
             print(raw.columns)
         
         # Flatten MultiIndex → <ticker>_Close
@@ -94,9 +81,11 @@ def fetch_and_analyze_tse_stocks(
         latest = df.iloc[-1]
 
         sudden_drop = ((df.iloc[-1][close_col] - df.iloc[-2][close_col]) / df.iloc[-2][close_col]) * 100
-        print(df.iloc[-1][close_col])
-        print(df.iloc[-2][close_col])
-        print(sudden_drop)
+        
+        if DEBUG:
+            print(df.iloc[-1][close_col])
+            print(df.iloc[-2][close_col])
+            print(sudden_drop)
 
         if DEBUG:
             print(latest["RSI"])

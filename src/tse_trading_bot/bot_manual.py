@@ -12,6 +12,7 @@ import requests
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
+import util
 
 import data_collector                 
 
@@ -21,14 +22,16 @@ TOKEN   = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")     
 THREASHOLD_DORP_PERCENTAGE = os.getenv("THREASHOLD_DORP_PERCENTAGE")
 THREASHOLD_RSI = os.getenv("THREASHOLD_RSI") 
+MESSAGE_BATCH_SIZE = os.getenv("MESSAGE_BATCH_SIZE",15) 
+BATCH_MODE = os.getenv("BATCH_MODE","TRUE")
 
 # ───────── Helpers ─────────
-def _format(results: list[dict]) -> str:
+def _format(results: list[dict],additionals_flag: bool=False) -> str:
 
     heading = f"📈 Tokyo Stock Scan ({datetime.now(ZoneInfo('Asia/Tokyo')).date()})\n\n"
     
     if not results:
-        return heading + "No qualifying TSE stocks today."
+        return {"flag":"empty", "message":heading + "No qualifying TSE stocks today."}
     
 
     results_with_drop = [r for r in results if "SuddenDrop" in r]
@@ -54,10 +57,17 @@ def _format(results: list[dict]) -> str:
             for r in results_with_drop
         )
 
-    additionals = f"\nTrading View: https://www.tradingview.com/chart/ \n" \
-                   "Rakuten Security: https://www.rakuten-sec.co.jp\n"
 
-    return message + message_with_drop + additionals
+    additionals = ''
+    if additionals_flag:
+        additionals = f"\nTrading View: https://www.tradingview.com/chart/ \n" \
+                    "Rakuten Security: https://www.rakuten-sec.co.jp\n"
+
+    return {
+        "flag":"message", 
+        "message":message 
+        + message_with_drop 
+        + additionals}
 
 
 def _send_telegram(text: str) -> None:
@@ -80,10 +90,69 @@ def _send_telegram(text: str) -> None:
 
 
 
+
+
+def send_message(tickers:list[str] | None = None):
+    """
+    Fetch, analyse and (optionally) push a Telegram message.
+
+    Returns
+    -------
+    bool
+        True  – a message WAS sent
+        False – the result set was empty, nothing was sent
+    """
+
+    message = _format(data_collector.fetch_and_analyze_tse_stocks(
+                THREASHOLD_DORP_PERCENTAGE=int(THREASHOLD_DORP_PERCENTAGE),
+                THREASHOLD_RSI = int(THREASHOLD_RSI),
+                tickers=tickers
+            ))
+    if message["flag"] == "empty":
+        return False
+            
+            
+    _send_telegram(message["message"])
+
+    return True
+
+
+    
+
+def batch_load_message(message_batch_size=20):
+    full_stock_list = util._load_tickers()
+
+    increment = 0
+    message_sent = False
+    message_sent_once = False
+
+    while increment + message_batch_size < len(full_stock_list):
+
+        batch_list = full_stock_list[increment:increment + message_batch_size]
+        message_sent  = send_message(tickers=batch_list)
+
+        increment += message_batch_size
+
+        if not message_sent_once and not message_sent:
+            message_sent_once = True
+
+
+    batch_list = full_stock_list[increment:increment + message_batch_size]
+    message_sent = send_message(tickers=batch_list)
+
+
+    if not message_sent and not message_sent_once:
+        _send_telegram(_format(results={})["message"])
+    
+
+
+
 # ───────── Main ──────────
 if __name__ == "__main__":
-    message = _format(data_collector.fetch_and_analyze_tse_stocks(
-            THREASHOLD_DORP_PERCENTAGE=int(THREASHOLD_DORP_PERCENTAGE),
-            THREASHOLD_RSI = int(THREASHOLD_RSI)
-        ))
-    _send_telegram(message)
+
+
+    if BATCH_MODE == "TRUE":
+        batch_load_message(message_batch_size=int(MESSAGE_BATCH_SIZE))
+    else:
+        
+        send_message()
