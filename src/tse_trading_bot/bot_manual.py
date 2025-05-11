@@ -34,12 +34,25 @@ def _format(results: list[dict],additionals_flag: bool=False) -> str:
         return {"flag":"empty", "message":heading + "No qualifying TSE stocks today."}
     
 
-    results_with_drop = [r for r in results if "SuddenDrop" in r]
-    results_with_no_drop = [r for r in results if "SuddenDrop" not in r]
+    results_with_drop = []
+    results_with_no_drop = []
+    resutls_with_buy =[]
     
+    for r in results:
+
+        if "BUY_SIGNAL" in r:
+            resutls_with_buy.append(r)
+        
+        elif "SuddenDrop" in r:
+            results_with_drop.append(r)
+        
+        else:
+            results_with_no_drop.append(r)
+
 
     message  = ''
     message_with_drop = ''
+    message_with_buy = ''
     if len(results_with_no_drop) > 0:
         message =  heading + "\n".join(
             f"{r['Ticker']}  | {r['Name']} |  ¥{r['Price']}\n"
@@ -57,6 +70,14 @@ def _format(results: list[dict],additionals_flag: bool=False) -> str:
             for r in results_with_drop
         )
 
+    if len(resutls_with_buy) > 0:
+
+        message_with_buy =  f"\n\n🔥🚦 BUY SIGNAL!!! {datetime.now(ZoneInfo('Asia/Tokyo')).date()}"  + "\n".join(
+            f"\n{r['Ticker']} | {r['Name']} | ¥{r['Price']}\n"
+            f"RSI {r['RSI']} • MACD {r['MACD Signal']}\n"
+            f"Support ¥{r['Support']} / Resistance ¥{r['Resistance']}\n"
+            for r in resutls_with_buy
+        )
 
     additionals = ''
     if additionals_flag:
@@ -65,9 +86,11 @@ def _format(results: list[dict],additionals_flag: bool=False) -> str:
 
     return {
         "flag":"message", 
-        "message":message 
+        "message": message_with_buy 
+        + message 
         + message_with_drop 
-        + additionals}
+        + additionals
+        }
 
 
 def _send_telegram(text: str) -> None:

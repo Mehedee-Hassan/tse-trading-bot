@@ -24,6 +24,18 @@ def _indicators(df: pd.DataFrame, close_col: str) -> pd.DataFrame:
     macd = ta.trend.MACD(close)
     df["MACD"] = macd.macd()
     df["Signal"] = macd.macd_signal()
+
+
+    df["BUY_CONFLUENCE"] = (
+        (df["MACD"].shift(1) < df["Signal"].shift(1))
+        & (df["MACD"] > df["Signal"])
+        & (df["RSI"].shift(1) < 30)
+        & (df["RSI"] > 40)
+        & (df[close_col].shift(1) < df["EMA20"].shift(1))
+        & (df[close_col] > df["EMA20"])
+        & (df["EMA20"] > df["EMA50"])
+    )
+
     return df.dropna()
 
 
@@ -100,6 +112,23 @@ def fetch_and_analyze_tse_stocks(
         except Exception as ex:
             print(ex)
 
+
+        print(latest)
+        if latest["BUY_CONFLUENCE"]:
+            results.append(
+                {
+                    "Ticker": ticker,
+                    "BUY_SIGNAL":"BUY",
+                    "Price": round(latest[close_col], 2),
+                    "BuySignal": "Confluence",
+                    "RSI": round(latest["RSI"], 2),
+                    "MACD Signal": "Buy", 
+                    "Support": round(support, 2),
+                    "Resistance": round(resistance, 2),
+                    "Name": name,
+                }
+            )
+            continue
 
         if  latest["RSI"] < THREASHOLD_RSI :
             # and latest[close_col] > latest["EMA20"]:
