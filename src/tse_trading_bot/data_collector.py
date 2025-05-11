@@ -1,16 +1,64 @@
 # data_collector.py
 from __future__ import annotations
-from typing import List, Dict
+from typing import List, Dict, Set, Tuple
 import yfinance as yf
 import pandas as pd
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import ta
 from pathlib import Path
 import util
+import csv
 
 
 
+
+TZ = ZoneInfo("Asia/Tokyo")
+TODAY: str = datetime.now(TZ).date().isoformat() 
+ALERTS_FILE: Path = Path("./data/"+str(TODAY)+".csv")
 
 DEFAULT_TICKERS: List[str] = util._load_tickers()
+
+# Row schema: alert_date,ticker,alert_type
+_alert_cache: Set[Tuple[str, str, str, int]] | None = None
+
+
+def _load_alert_cache() -> None:
+    global _alert_cache
+    if _alert_cache is not None:
+        return  
+
+    _alert_cache = set()
+    if ALERTS_FILE.exists():
+        with ALERTS_FILE.open("r", newline="") as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if len(row) == 4:
+                    _alert_cache.add(tuple(row))
+
+
+def _already_alerted(ticker: str, alert_type: str, value :str) -> bool:
+    _load_alert_cache()
+    assert _alert_cache is not None
+    return (TODAY, ticker, alert_type, value) in _alert_cache
+
+
+def _mark_alert(ticker: str, alert_type: str, value :str) -> None:
+    _load_alert_cache()
+    assert _alert_cache is not None
+    key = (TODAY, ticker, alert_type, value)
+    print(key,_alert_cache)
+    if key in _alert_cache:
+        print(key)
+        return  
+
+    # Append to file first (so even if script crashes later we don’t lose the entry)
+    with ALERTS_FILE.open("a", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(key)
+
+    _alert_cache.add(key)
+
 
 
 def _indicators(df: pd.DataFrame, close_col: str) -> pd.DataFrame:
@@ -114,7 +162,7 @@ def fetch_and_analyze_tse_stocks(
 
 
         print(latest)
-        if latest["BUY_CONFLUENCE"]:
+        if latest["BUY_CONFLUENCE"] and not _already_alerted(ticker=ticker, alert_type="BUY", value=str(-1)):
             results.append(
                 {
                     "Ticker": ticker,
@@ -128,9 +176,10 @@ def fetch_and_analyze_tse_stocks(
                     "Name": name,
                 }
             )
+            _mark_alert(ticker=ticker, alert_type="BUY", value=-1)
             continue
 
-        if  latest["RSI"] < THREASHOLD_RSI :
+        if  latest["RSI"] < THREASHOLD_RSI and not _already_alerted(ticker=ticker, alert_type="RSI", value=str(-1)):
             # and latest[close_col] > latest["EMA20"]:
             results.append(
                 {
@@ -145,7 +194,10 @@ def fetch_and_analyze_tse_stocks(
                     "Name" : name
                 }
             )
-        if sudden_drop < (-THREASHOLD_DORP_PERCENTAGE):
+            _mark_alert(ticker=ticker, alert_type="RSI", value=-1)
+
+        if sudden_drop < (-THREASHOLD_DORP_PERCENTAGE) and \
+              not _already_alerted(ticker=ticker, alert_type="SuddenDrop", value=str(int(sudden_drop))):
             
             if "Ticker" not in results:
                 results.append(
@@ -165,7 +217,9 @@ def fetch_and_analyze_tse_stocks(
                 results.append(
                     {
                         "SuddenDrop": round(sudden_drop,2)
-                    })                        
+                    })
+
+            _mark_alert(ticker=ticker, alert_type="SuddenDrop", value=int(sudden_drop))                       
         
         if DEBUG:
             print("result",results)
