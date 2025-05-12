@@ -16,6 +16,11 @@ poetry add yfinance pandas numpy ta matplotlib python-telegram-bot
 ```
 
 ### RUN BOT 
+
+#### Step1: Setup `.env` file.
+1. telegram channel id, token, and common env variables.
+   
+#### Step2: Make List and Run
 1. update `resource/ticker.txt` list of stock.
 2. run command.
 
