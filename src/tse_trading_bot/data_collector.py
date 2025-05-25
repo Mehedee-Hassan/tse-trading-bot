@@ -241,7 +241,7 @@ def fetch_and_analyze_tse_stocks(
 
 if __name__ == "__main__":
     results = fetch_and_analyze_tse_stocks(
-        tickers=["7203.T"], 
+        tickers=["6758.T"], 
         DEBUG=True,
         PLOT=True
     )
