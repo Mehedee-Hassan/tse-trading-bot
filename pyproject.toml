@@ -1,25 +1,21 @@
-[project]
+[tool.poetry]
 name = "tse-trading-bot"
 version = "0.1.0"
 description = ""
-authors = [
-    {name = "mehedee-hassan",email = "mehedee@yandex.com"}
-]
+authors = ["mehedee-hassan <mehedee@yandex.com>"]
 readme = "README.md"
-requires-python = ">=3.11"
-dependencies = [
-    "yfinance (>=0.2.58,<0.3.0)",
-    "pandas (>=2.2.3,<3.0.0)",
-    "numpy (>=2.2.5,<3.0.0)",
-    "ta (>=0.11.0,<0.12.0)",
-    "matplotlib (>=3.10.1,<4.0.0)",
-    "python-telegram-bot (>=22.0,<23.0)",
-    "python-dotenv (>=1.1.0,<2.0.0)"
-]
+packages = [{ include = "tse_trading_bot", from = "src" }]
+# optional if your code is in src/tse_trading_bot/
 
-[tool.poetry]
-packages = [{include = "tse_trading_bot", from = "src"}]
-
+[tool.poetry.dependencies]
+python = ">=3.11"
+yfinance = ">=0.2.58,<0.3.0"
+pandas = ">=2.2.3,<3.0.0"
+numpy = ">=2.2.5,<3.0.0"
+ta = ">=0.11.0,<0.12.0"
+matplotlib = ">=3.10.1,<4.0.0"
+python-telegram-bot = ">=22.0,<23.0"
+python-dotenv = ">=1.1.0,<2.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

@@ -161,7 +161,7 @@ def fetch_and_analyze_tse_stocks(
             print(ex)
 
 
-        print(latest)
+        print("latest=",latest)
         if latest["BUY_CONFLUENCE"] and not _already_alerted(ticker=ticker, alert_type="BUY", value=str(-1)):
             results.append(
                 {
