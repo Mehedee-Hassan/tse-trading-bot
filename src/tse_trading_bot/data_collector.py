@@ -47,9 +47,10 @@ def _mark_alert(ticker: str, alert_type: str, value :str) -> None:
     _load_alert_cache()
     assert _alert_cache is not None
     key = (TODAY, ticker, alert_type, value)
+    
     print(key,_alert_cache)
     if key in _alert_cache:
-        print(key)
+        print("Found previous check flag: ",key)
         return  
 
     # Append to file first (so even if script crashes later we don’t lose the entry)
@@ -75,14 +76,14 @@ def _indicators(df: pd.DataFrame, close_col: str) -> pd.DataFrame:
 
 
     df["BUY_CONFLUENCE"] = (
-        (df["MACD"].shift(1) < df["Signal"].shift(1))
-        & (df["MACD"] > df["Signal"])
-        & (df["RSI"].shift(1) < 30)
-        & (df["RSI"] > 40)
-        & (df[close_col].shift(1) < df["EMA20"].shift(1))
+        (df["MACD"] > df["Signal"])
+        & (df["RSI"] > 30)
+        & (df["RSI"].rolling(2).min() < 28)
         & (df[close_col] > df["EMA20"])
-        & (df["EMA20"] > df["EMA50"])
+        & (df["EMA20"] > df["EMA50"])       
     )
+
+
 
     return df.dropna()
 
@@ -120,7 +121,10 @@ def fetch_and_analyze_tse_stocks(
             print(raw.columns)
         
         close_col = f"{ticker}_Close"
-        print(close_col)
+
+        if DEBUG:
+            print("close_col: ", close_col)
+    
         if close_col not in raw.columns:
             
             continue
@@ -131,7 +135,7 @@ def fetch_and_analyze_tse_stocks(
 
         df = _indicators(raw, close_col)
             
-
+        print("inside 1")
 
         if df.empty:
             continue
@@ -161,7 +165,9 @@ def fetch_and_analyze_tse_stocks(
             print(ex)
 
 
-        print("latest=",latest)
+        print(f"{ticker} — BUY_CONFLUENCE count in window: {df['BUY_CONFLUENCE'].sum()}")
+         
+
         if latest["BUY_CONFLUENCE"] and not _already_alerted(ticker=ticker, alert_type="BUY", value=str(-1)):
             results.append(
                 {
