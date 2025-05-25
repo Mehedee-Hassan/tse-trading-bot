@@ -1,5 +1,6 @@
 # data_collector.py
 from __future__ import annotations
+from plotting import plot_indicators
 from typing import List, Dict, Set, Tuple
 import yfinance as yf
 import pandas as pd
@@ -96,7 +97,8 @@ def fetch_and_analyze_tse_stocks(
     tickers: List[str] | None = None,
     period: str = "3mo",
     interval: str = "1d",
-    DEBUG = False
+    DEBUG = False,
+    PLOT= False
 ) -> List[Dict]:
     """
     Returns a list of dicts with the latest signal for each qualifying ticker.
@@ -134,8 +136,10 @@ def fetch_and_analyze_tse_stocks(
 
 
         df = _indicators(raw, close_col)
-            
-        print("inside 1")
+
+        if PLOT:
+            plot_indicators(df, ticker=ticker, close_col=close_col, show_last_n=60)
+
 
         if df.empty:
             continue
@@ -227,7 +231,18 @@ def fetch_and_analyze_tse_stocks(
 
             _mark_alert(ticker=ticker, alert_type="SuddenDrop", value=int(sudden_drop))                       
         
+
+
         if DEBUG:
             print("result",results)
 
     return results
+
+
+if __name__ == "__main__":
+    results = fetch_and_analyze_tse_stocks(
+        tickers=["7203.T"], 
+        DEBUG=True,
+        PLOT=True
+    )
+    print(results)
