@@ -32,9 +32,20 @@ in cannel
 /scan
 ```
 
+
+
 ### ONE-TIME SCAN 
 ```
 poetry run python src/tse_trading_bot/bot_manual.py
+```
+
+### DOCKER FILE
+
+```
+docker build -t tse-trading-bot-v1 .
+```
+```
+docker run tse-trading-bot-v1
 ```
 
 
