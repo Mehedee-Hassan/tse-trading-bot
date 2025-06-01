@@ -62,7 +62,9 @@ def _mark_alert(ticker: str, alert_type: str, value :str) -> None:
 
 
 
-def _indicators(df: pd.DataFrame, close_col: str) -> pd.DataFrame:
+def _indicators(df: pd.DataFrame, close_col: str, 
+                mega_cap:int=50_000_000_000,
+                mid_cap:int=5_000_000_000) -> pd.DataFrame:
     """
     Attach RSI, EMA‑20/50, MACD & signal columns; return NaN‑free frame.
     """
@@ -73,6 +75,19 @@ def _indicators(df: pd.DataFrame, close_col: str) -> pd.DataFrame:
     macd = ta.trend.MACD(close)
     df["MACD"] = macd.macd()
     df["Signal"] = macd.macd_signal()
+
+    df["VALUE_JPY"]   = df["Volume"] * df["Close"]          
+    avg_yen_turnover  = df["VALUE_JPY"].rolling(20).mean().iloc[-1]
+
+    # ---- Pick a VOL_REL cutoff by liquidity bucket ----
+    if   avg_yen_turnover > mega_cap:        # > ¥50 bn / day  ➜ mega-cap
+        vol_cutoff = 1.3                          # 30 % above norm
+    elif avg_yen_turnover >  mid_cap:        # ¥5–50 bn / day ➜ mid-cap
+        vol_cutoff = 1.6                          # 60 % above norm
+    else:                                          # < ¥5 bn / day   ➜ small-cap
+        vol_cutoff = 2.0                          # 100 % above norm
+
+    df["VOLUME_ALERT"] = df["VOL_REL"] >= vol_cutoff
 
 
     df["BUY_CONFLUENCE"] = (

@@ -24,6 +24,8 @@ THREASHOLD_DORP_PERCENTAGE = os.getenv("THREASHOLD_DORP_PERCENTAGE")
 THREASHOLD_RSI = os.getenv("THREASHOLD_RSI") 
 MESSAGE_BATCH_SIZE = os.getenv("MESSAGE_BATCH_SIZE",15) 
 BATCH_MODE = os.getenv("BATCH_MODE","TRUE")
+MEGA_CAPITAL_SIZE= int(os.getenv("MEGA_CAPITAL_SIZE",50_000_000_000))
+MID_CAPITAL_SIZE= int(os.getenv("MID_CAPITAL_SIZE",5_000_000_000))
 
 # ───────── Helpers ─────────
 def _format(results: list[dict],additionals_flag: bool=False) -> str:
@@ -129,7 +131,9 @@ def send_message(tickers:list[str] | None = None):
     message = _format(data_collector.fetch_and_analyze_tse_stocks(
                 THREASHOLD_DORP_PERCENTAGE=int(THREASHOLD_DORP_PERCENTAGE),
                 THREASHOLD_RSI = int(THREASHOLD_RSI),
-                tickers=tickers
+                tickers=tickers,
+                mega_cap=MEGA_CAPITAL_SIZE,
+                mid_cap=MID_CAPITAL_SIZE
             ))
     if message["flag"] == "empty":
         return False
