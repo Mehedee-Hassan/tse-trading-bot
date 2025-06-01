@@ -226,10 +226,30 @@ def fetch_and_analyze_tse_stocks(
                     else "Sell",
                     "Support": round(support, 2),
                     "Resistance": round(resistance, 2),
-                    "Name" : name
+                    "Name" : name,
+                    "CAP":capital
                 }
             )
             _mark_alert(ticker=ticker, alert_type="RSI", value=-1)
+
+        if latest["VOLUME_ALERT"] == True:
+            results.append(
+                {
+                    "Ticker": ticker,
+                    "Price": round(latest[close_col], 2),
+                    "RSI": round(latest["RSI"], 2),
+                    "VOLUME_ALERT": round(latest["VOL_REL"],2),
+                    "MACD Signal": "Buy"
+                    if latest["MACD"] > latest["Signal"]
+                    else "Sell",
+                    "Support": round(support, 2),
+                    "Resistance": round(resistance, 2),
+                    "Name" : name,
+                    "CAP":capital
+                }
+            )
+            _mark_alert(ticker=ticker, alert_type="VOLUME_ALERT", value=-1)
+
 
         if sudden_drop < (-THREASHOLD_DORP_PERCENTAGE) and \
               not _already_alerted(ticker=ticker, alert_type="SuddenDrop", value=str(int(sudden_drop))):
@@ -246,7 +266,8 @@ def fetch_and_analyze_tse_stocks(
                         else "Sell",
                         "Support": round(support, 2),
                         "Resistance": round(resistance, 2),
-                        "Name" : name
+                        "Name" : name,
+                        "CAP":capital
                     })
             else:
                 results.append(
