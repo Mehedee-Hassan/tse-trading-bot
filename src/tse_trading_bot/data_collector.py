@@ -63,7 +63,7 @@ def _mark_alert(ticker: str, alert_type: str, value :str) -> None:
 
 
 
-def _indicators(df: pd.DataFrame, close_col: str, 
+def _indicators(df: pd.DataFrame, close_col: str, volume_col,
                 mega_cap:int=50_000_000_000,
                 mid_cap:int=5_000_000_000) -> pd.DataFrame:
     """
@@ -76,14 +76,17 @@ def _indicators(df: pd.DataFrame, close_col: str,
     macd = ta.trend.MACD(close)
     df["MACD"] = macd.macd()
     df["Signal"] = macd.macd_signal()
+    # print(df.columns)
 
-    df["VALUE_JPY"]   = df["Volume"] * df["Close"]          
+    avg_20_vol = df[volume_col].rolling(20).mean()
+
+    df["VALUE_JPY"]   =  df[volume_col] * df[close_col]          
     avg_yen_turnover  = df["VALUE_JPY"].rolling(20).mean().iloc[-1]
-
+    df["VOL_REL"] = df[volume_col] /avg_20_vol
     if   avg_yen_turnover > mega_cap:               # > ¥50 bn / day  ➜ mega-cap
-        vol_cutoff = 1.3                            # 30 % above norm
+        vol_cutoff = 1.5                            # 30 % above norm
     elif avg_yen_turnover >  mid_cap:               # ¥5–50 bn / day ➜ mid-cap
-        vol_cutoff = 1.6                            # 60 % above norm
+        vol_cutoff = 1.7                            # 60 % above norm
     else:                                           # < ¥5 bn / day   ➜ small-cap
         vol_cutoff = 2.0                            # 100 % above norm
 
@@ -139,6 +142,7 @@ def fetch_and_analyze_tse_stocks(
             print(raw.columns)
         
         close_col = f"{ticker}_Close"
+        volume_col = f"{ticker}_Volume"
 
         if DEBUG:
             print("close_col: ", close_col)
@@ -151,9 +155,10 @@ def fetch_and_analyze_tse_stocks(
             print(raw)
 
 
-        df = _indicators(raw, close_col,mega_cap=mega_cap,mid_cap=mid_cap)
-            
-        print("inside 1")
+        df = _indicators(raw, close_col,volume_col,mega_cap=mega_cap,mid_cap=mid_cap)
+        
+        if DEBUG:
+            print("inside 1")
 
         if df.empty:
             continue
@@ -188,7 +193,7 @@ def fetch_and_analyze_tse_stocks(
 
         capital = ""
         try:
-            capital =  humanize.intword(info.get("market_cap",""))
+            capital =  info.get("market_cap","")
         except:
             
             print("Capital :",ex)

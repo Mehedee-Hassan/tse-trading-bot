@@ -80,20 +80,20 @@ def _format(results: list[dict],additionals_flag: bool=False) -> str:
 
         message_with_buy =  f"\n\n🔥🚦 BUY SIGNAL!!! {datetime.now(ZoneInfo('Asia/Tokyo')).date()}"  + "\n".join(
             f"\n{r['Ticker']} | {r['Name']} | ¥{r['Price']}\n"
-            f"CAP: {r['CAP']}\n"
+            f"MARKET CAP: {r['CAP']}\n"
             f"RSI {r['RSI']} • MACD {r['MACD Signal']}\n"
             f"Support ¥{r['Support']} / Resistance ¥{r['Resistance']}\n"
             for r in resutls_with_buy
         )
     if len(resutls_with_volumn) > 0:
 
-        message_with_buy =  f"\n\n🔥🚦 BUY SIGNAL!!! {datetime.now(ZoneInfo('Asia/Tokyo')).date()}"  + "\n".join(
+        message_with_volume =  f"\n\n🔥 VOLUME SIGNAL!!! {datetime.now(ZoneInfo('Asia/Tokyo')).date()}"  + "\n".join(
             f"\n{r['Ticker']} | {r['Name']} | ¥{r['Price']}\n"
-            f"CAP: {r['CAP']}\n"
-            f"VOLUME REL 20: {r['VOLUME_ALERT']}\n"
+            f"MARKET CAP: {r['CAP']}\n"
+            f"VOLUME REL 20D: {r['VOLUME_ALERT']}\n"
             f"RSI {r['RSI']} • MACD {r['MACD Signal']}\n"
             f"Support ¥{r['Support']} / Resistance ¥{r['Resistance']}\n"
-            for r in resutls_with_buy
+            for r in resutls_with_volumn
         )
 
     additionals = ''
@@ -104,6 +104,7 @@ def _format(results: list[dict],additionals_flag: bool=False) -> str:
     return {
         "flag":"message", 
         "message": message_with_buy 
+        + message_with_volume
         + message 
         + message_with_drop 
         + additionals
