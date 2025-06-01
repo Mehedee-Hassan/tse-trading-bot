@@ -58,7 +58,8 @@ def _format(results: list[dict],additionals_flag: bool=False) -> str:
     if len(results_with_no_drop) > 0:
         message =  f"\n⬇️ RSI Signal ({datetime.now(ZoneInfo('Asia/Tokyo')).date()})\n\n" + "\n".join(
             f"{r['Ticker']}  | {r['Name']} |  ¥{r['Price']}\n"
-            f"RSI {r['RSI']}"
+            f"CAP: {r['CAP']}\n"
+            f"RSI {r['RSI']}\n"
             f"Support ¥{r['Support']} / Resistance ¥{r['Resistance']}\n"
             for r in results_with_no_drop
         )
@@ -66,6 +67,7 @@ def _format(results: list[dict],additionals_flag: bool=False) -> str:
 
         message_with_drop =  f"\n🚨PRICE DROP ALERT !!! {datetime.now(ZoneInfo('Asia/Tokyo')).date()}"  + "\n".join(
             f"\n{r['Ticker']} | {r['Name']} | ¥{r['Price']}\n"
+            f"Market CAP: {r['CAP']}\n"
             f"\n{ abs(r['SuddenDrop']) } % Drop !!\n"
             f"RSI {r['RSI']} • MACD {r['MACD Signal']}\n"
             f"Support ¥{r['Support']} / Resistance ¥{r['Resistance']}\n"
@@ -76,6 +78,7 @@ def _format(results: list[dict],additionals_flag: bool=False) -> str:
 
         message_with_buy =  f"\n\n🔥🚦 BUY SIGNAL!!! {datetime.now(ZoneInfo('Asia/Tokyo')).date()}"  + "\n".join(
             f"\n{r['Ticker']} | {r['Name']} | ¥{r['Price']}\n"
+            f"CAP: {r['CAP']}\n"
             f"RSI {r['RSI']} • MACD {r['MACD Signal']}\n"
             f"Support ¥{r['Support']} / Resistance ¥{r['Resistance']}\n"
             for r in resutls_with_buy

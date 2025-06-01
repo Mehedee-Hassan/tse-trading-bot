@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 import ta
 from pathlib import Path
 import util
+import humanize
 import csv
 
 
@@ -79,13 +80,12 @@ def _indicators(df: pd.DataFrame, close_col: str,
     df["VALUE_JPY"]   = df["Volume"] * df["Close"]          
     avg_yen_turnover  = df["VALUE_JPY"].rolling(20).mean().iloc[-1]
 
-    # ---- Pick a VOL_REL cutoff by liquidity bucket ----
-    if   avg_yen_turnover > mega_cap:        # > ¥50 bn / day  ➜ mega-cap
-        vol_cutoff = 1.3                          # 30 % above norm
-    elif avg_yen_turnover >  mid_cap:        # ¥5–50 bn / day ➜ mid-cap
-        vol_cutoff = 1.6                          # 60 % above norm
-    else:                                          # < ¥5 bn / day   ➜ small-cap
-        vol_cutoff = 2.0                          # 100 % above norm
+    if   avg_yen_turnover > mega_cap:               # > ¥50 bn / day  ➜ mega-cap
+        vol_cutoff = 1.3                            # 30 % above norm
+    elif avg_yen_turnover >  mid_cap:               # ¥5–50 bn / day ➜ mid-cap
+        vol_cutoff = 1.6                            # 60 % above norm
+    else:                                           # < ¥5 bn / day   ➜ small-cap
+        vol_cutoff = 2.0                            # 100 % above norm
 
     df["VOLUME_ALERT"] = df["VOL_REL"] >= vol_cutoff
 
@@ -111,7 +111,10 @@ def fetch_and_analyze_tse_stocks(
     tickers: List[str] | None = None,
     period: str = "3mo",
     interval: str = "1d",
-    DEBUG = False
+    DEBUG = False,
+    mega_cap:int=50_000_000_000,
+    mid_cap:int=5_000_000_000
+    
 ) -> List[Dict]:
     """
     Returns a list of dicts with the latest signal for each qualifying ticker.
@@ -148,7 +151,7 @@ def fetch_and_analyze_tse_stocks(
             print(raw)
 
 
-        df = _indicators(raw, close_col)
+        df = _indicators(raw, close_col,mega_cap=mega_cap,mid_cap=mid_cap)
             
         print("inside 1")
 
@@ -170,15 +173,25 @@ def fetch_and_analyze_tse_stocks(
             print(latest["RSI"])
 
         name = ""
+        tic = yf.Ticker(ticker)
+        info = tic.get_info()
         try:
-            tic = yf.Ticker(ticker)
-            info = tic.get_info()              
+            
+                          
             name = info.get("longName") \
                 or info.get("shortName") \
                 or info.get("displayName")
+            
+
         except Exception as ex:
             print(ex)
 
+        capital = ""
+        try:
+            capital =  humanize.intword(info.get("market_cap",""))
+        except:
+            
+            print("Capital :",ex)
 
         print(f"{ticker} — BUY_CONFLUENCE count in window: {df['BUY_CONFLUENCE'].sum()}")
          
@@ -195,6 +208,7 @@ def fetch_and_analyze_tse_stocks(
                     "Support": round(support, 2),
                     "Resistance": round(resistance, 2),
                     "Name": name,
+                    "CAP":capital
                 }
             )
             _mark_alert(ticker=ticker, alert_type="BUY", value=-1)
