@@ -92,11 +92,12 @@ def _indicators(df: pd.DataFrame, close_col: str) -> pd.DataFrame:
 
 def fetch_and_analyze_tse_stocks(
     THREASHOLD_DORP_PERCENTAGE:int = 5,
+    THREASHOLD_AVG_DORP_PERCENTAGE = 5,
     THREASHOLD_RSI:int = 30,
     tickers: List[str] | None = None,
     period: str = "3mo",
     interval: str = "1d",
-    DEBUG = False
+    DEBUG = False,
 ) -> List[Dict]:
     """
     Returns a list of dicts with the latest signal for each qualifying ticker.
@@ -135,13 +136,12 @@ def fetch_and_analyze_tse_stocks(
 
         df = _indicators(raw, close_col)
             
-        print("inside 1")
 
         if df.empty:
             continue
 
-        support = df[close_col].tail(20).min()
-        resistance = df[close_col].tail(20).max()
+        support = df[close_col].tail(30).min()
+        resistance = df[close_col].tail(30).max()
         latest = df.iloc[-1]
 
         sudden_drop = ((df.iloc[-1][close_col] - df.iloc[-2][close_col]) / df.iloc[-2][close_col]) * 100
@@ -154,15 +154,42 @@ def fetch_and_analyze_tse_stocks(
         if DEBUG:
             print(latest["RSI"])
 
+
+        # average drop 
+        if len(df) < 5:
+            continue  # skip if less than 5 data points
+
+        data = df.tail(5)
+        avg_start = data[close_col].iloc[0]
+        avg_end = data[close_col].iloc[-1]
+        avg_drop_percent = ((avg_end - avg_start) / avg_start) * 100
+        
+
+        # tick info:
+
         name = ""
+        mcap = None
         try:
             tic = yf.Ticker(ticker)
             info = tic.get_info()              
             name = info.get("longName") \
                 or info.get("shortName") \
                 or info.get("displayName")
+        
+            mcap = tic.fast_info.get("market_cap", None)
+
+            if not mcap:
+                try:
+                    mcap = tic.info.get("marketCap")
+                except:
+                    mcap = None
+
+            if mcap:
+                mcap ="¥ "+str(round(int(mcap) / 1_000_000_000, 3))+ " B"
         except Exception as ex:
             print(ex)
+
+
 
 
         print(f"{ticker} — BUY_CONFLUENCE count in window: {df['BUY_CONFLUENCE'].sum()}")
@@ -180,6 +207,7 @@ def fetch_and_analyze_tse_stocks(
                     "Support": round(support, 2),
                     "Resistance": round(resistance, 2),
                     "Name": name,
+                    "CAP":mcap
                 }
             )
             _mark_alert(ticker=ticker, alert_type="BUY", value=-1)
@@ -197,7 +225,8 @@ def fetch_and_analyze_tse_stocks(
                     else "Sell",
                     "Support": round(support, 2),
                     "Resistance": round(resistance, 2),
-                    "Name" : name
+                    "Name" : name,
+                    "CAP":mcap
                 }
             )
             _mark_alert(ticker=ticker, alert_type="RSI", value=-1)
@@ -205,27 +234,46 @@ def fetch_and_analyze_tse_stocks(
         if sudden_drop < (-THREASHOLD_DORP_PERCENTAGE) and \
               not _already_alerted(ticker=ticker, alert_type="SuddenDrop", value=str(int(sudden_drop))):
             
-            if "Ticker" not in results:
-                results.append(
-                    {
-                        "Ticker": ticker,
-                        "SuddenDrop": round(sudden_drop,2),
-                        "Price": round(latest[close_col], 2),
-                        "RSI": round(latest["RSI"], 2),
-                        "MACD Signal": "Buy"
-                        if latest["MACD"] > latest["Signal"]
-                        else "Sell",
-                        "Support": round(support, 2),
-                        "Resistance": round(resistance, 2),
-                        "Name" : name
-                    })
-            else:
-                results.append(
-                    {
-                        "SuddenDrop": round(sudden_drop,2)
-                    })
+            results.append(
+                {
+                    "Ticker": ticker,
+                    "SuddenDrop": round(sudden_drop,2),
+                    "Price": round(latest[close_col], 2),
+                    "RSI": round(latest["RSI"], 2),
+                    "MACD Signal": "Buy"
+                    if latest["MACD"] > latest["Signal"]
+                    else "Sell",
+                    "Support": round(support, 2),
+                    "Resistance": round(resistance, 2),
+                    "Name" : name,
+                    "CAP":mcap
+                })
+            
+            _mark_alert(ticker=ticker, alert_type="SuddenDrop", value=int(sudden_drop))  
+            
 
-            _mark_alert(ticker=ticker, alert_type="SuddenDrop", value=int(sudden_drop))                       
+        if avg_drop_percent < (-THREASHOLD_AVG_DORP_PERCENTAGE) and \
+              not _already_alerted(ticker=ticker, alert_type="avg_drop", value=str(int(avg_drop_percent))):
+            
+            results.append(
+                {
+                    "Ticker": ticker,
+                    "AVG_DROP": round(avg_drop_percent,2),
+                    "START_5_DAY": avg_start,
+                    "Price": round(latest[close_col], 2),
+                    "RSI": round(latest["RSI"], 2),
+                    "MACD Signal": "Buy"
+                    if latest["MACD"] > latest["Signal"]
+                    else "Sell",
+                    "Support": round(support, 2),
+                    "Resistance": round(resistance, 2),
+                    "Name" : name,
+                    "CAP":mcap
+                })
+
+            _mark_alert(ticker=ticker, alert_type="avg_drop", value=int(avg_drop_percent))  
+
+                     
         
         if DEBUG:
             print("result",results)
