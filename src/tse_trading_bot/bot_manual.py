@@ -20,10 +20,11 @@ import data_collector
 load_dotenv()                         
 TOKEN   = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")     
-THREASHOLD_DORP_PERCENTAGE = os.getenv("THREASHOLD_DORP_PERCENTAGE")
+THREASHOLD_DORP_PERCENTAGE = os.getenv("THREASHOLD_DORP_PERCENTAGE",5)
 THREASHOLD_RSI = os.getenv("THREASHOLD_RSI") 
 MESSAGE_BATCH_SIZE = os.getenv("MESSAGE_BATCH_SIZE",15) 
 BATCH_MODE = os.getenv("BATCH_MODE","TRUE")
+THREASHOLD_AVG_DORP_PERCENTAGE = os.getenv("THREASHOLD_AVG_DORP_PERCENTAGE",5)
 
 # ───────── Helpers ─────────
 def _format(results: list[dict],additionals_flag: bool=False) -> str:
@@ -37,6 +38,7 @@ def _format(results: list[dict],additionals_flag: bool=False) -> str:
     results_with_drop = []
     results_with_no_drop = []
     resutls_with_buy =[]
+    results_with_drop_avg = []
     
     for r in results:
 
@@ -45,7 +47,8 @@ def _format(results: list[dict],additionals_flag: bool=False) -> str:
         
         elif "SuddenDrop" in r:
             results_with_drop.append(r)
-        
+        elif "AVG_DROP" in r:
+            results_with_drop_avg.append(r)
         else:
             results_with_no_drop.append(r)
 
@@ -53,27 +56,42 @@ def _format(results: list[dict],additionals_flag: bool=False) -> str:
     message  = ''
     message_with_drop = ''
     message_with_buy = ''
+    message_with_avg_drop = ''
     if len(results_with_no_drop) > 0:
         message =  f"\n⬇️ RSI Signal ({datetime.now(ZoneInfo('Asia/Tokyo')).date()})\n\n" + "\n".join(
             f"{r['Ticker']}  | {r['Name']} |  ¥{r['Price']}\n"
-            f"RSI {r['RSI']}"
+            f"RSI {r['RSI']} • "
             f"Support ¥{r['Support']} / Resistance ¥{r['Resistance']}\n"
+            f"Market CAP:{ r['CAP']} \n" if r['CAP'] is not None else ""
             for r in results_with_no_drop
         )
     if len(results_with_drop) > 0:
 
-        message_with_drop =  f"\n🚨PRICE DROP ALERT !!! {datetime.now(ZoneInfo('Asia/Tokyo')).date()}"  + "\n".join(
+        message_with_drop =  f"\n🚨SUDDEN PRICE DROP ALERT !!! {datetime.now(ZoneInfo('Asia/Tokyo')).date()}"  + "\n".join(
             f"\n{r['Ticker']} | {r['Name']} | ¥{r['Price']}\n"
             f"\n{ abs(r['SuddenDrop']) } % Drop !!\n"
             f"RSI {r['RSI']} • MACD {r['MACD Signal']}\n"
             f"Support ¥{r['Support']} / Resistance ¥{r['Resistance']}\n"
+            f"Market CAP:{ r['CAP']} \n" if r['CAP'] is not None else ""
             for r in results_with_drop
+        )
+
+    if len(results_with_drop_avg) > 0:
+
+        message_with_avg_drop =  f"\n📉AVG PRICE DROP ALERT !!! {datetime.now(ZoneInfo('Asia/Tokyo')).date()}"  + "\n".join(
+            f"\n{r['Ticker']} | {r['Name']} | ¥{r['Price']}\n"
+            f"\n{ abs(r['AVG_DROP']) } % Drop !!\n"
+            f"RSI {r['RSI']} • MACD {r['MACD Signal']}\n"
+            f"Support ¥{r['Support']} / Resistance ¥{r['Resistance']}\n"
+            f"Market CAP:{ r['CAP']} \n" if r['CAP'] is not None else ""
+            for r in results_with_drop_avg
         )
 
     if len(resutls_with_buy) > 0:
 
         message_with_buy =  f"\n\n🔥🚦 BUY SIGNAL!!! {datetime.now(ZoneInfo('Asia/Tokyo')).date()}"  + "\n".join(
             f"\n{r['Ticker']} | {r['Name']} | ¥{r['Price']}\n"
+            f"Market CAP:{ r['CAP']} \n" if r['CAP'] is not None else ""
             f"RSI {r['RSI']} • MACD {r['MACD Signal']}\n"
             f"Support ¥{r['Support']} / Resistance ¥{r['Resistance']}\n"
             for r in resutls_with_buy
@@ -89,6 +107,7 @@ def _format(results: list[dict],additionals_flag: bool=False) -> str:
         "message": message_with_buy 
         + message 
         + message_with_drop 
+        + message_with_avg_drop
         + additionals
         }
 
@@ -128,14 +147,16 @@ def send_message(tickers:list[str] | None = None):
 
     message = _format(data_collector.fetch_and_analyze_tse_stocks(
                 THREASHOLD_DORP_PERCENTAGE=int(THREASHOLD_DORP_PERCENTAGE),
+                THREASHOLD_AVG_DORP_PERCENTAGE=int(THREASHOLD_AVG_DORP_PERCENTAGE),
                 THREASHOLD_RSI = int(THREASHOLD_RSI),
                 tickers=tickers
             ))
     if message["flag"] == "empty":
         return False
+    
+    print(message["message"])
             
-            
-    _send_telegram(message["message"])
+    # _send_telegram(message["message"])
 
     return True
 
