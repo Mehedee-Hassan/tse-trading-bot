@@ -1,7 +1,9 @@
 .env
-./.env
+./env/.env
 resource/tickers copy*.txt
 resource/tickers_back.txt
 ./src/tse_trading_bot/data/*
 */data/*
 *.csv
+.ignore
+*.tar

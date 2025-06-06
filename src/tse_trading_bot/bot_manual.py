@@ -17,7 +17,7 @@ import util
 import data_collector                 
 
 # ───────── Config ──────────
-load_dotenv()                         
+load_dotenv(dotenv_path="./env/.env", override=True)                         
 TOKEN   = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")     
 THREASHOLD_DORP_PERCENTAGE = os.getenv("THREASHOLD_DORP_PERCENTAGE",5)
